@@ -39,7 +39,7 @@ else ()
 endif ()
 
 add_library (ImGui STATIC ${SOURCE_FILES})
-target_link_libraries(ImGui PUBLIC SDL STB FreeType EASTL)
+target_link_libraries(ImGui PUBLIC SDL2-static STB FreeType EASTL)
 if (URHO3D_OPENGL)
     if (MOBILE)
         # Mobiles do not need a loader. Lets game Dear ImGui here.
