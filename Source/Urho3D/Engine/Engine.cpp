@@ -378,6 +378,10 @@ bool Engine::Initialize(const StringVariantMap& parameters)
         context_->RegisterSubsystem(new SystemUI(context_,
             GetParameter(EP_SYSTEMUI_FLAGS, 0).GetUInt()));
 #endif
+#ifdef URHO3D_RMLUI
+        auto* graphics = GetSubsystem<Graphics>();
+        context_->GetSubsystem<RmlUI>()->SetScale(graphics->GetDPIScale());
+#endif
     }
     frameTimer_.Reset();
 

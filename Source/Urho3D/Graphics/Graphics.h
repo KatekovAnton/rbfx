@@ -515,6 +515,19 @@ public:
     /// Return whether compute shaders are supported.
     bool GetComputeSupport() const { return computeSupport_; }
 
+    
+    /// Return window width in points.
+    /// @property
+    int GetLogicalWidth() const { return logicalWidth_; }
+
+    /// Return window height in points.
+    /// @property
+    int GetLogicalHeight() const { return logicalHeight_; }
+
+    /// Return graphics dpi scale factor
+    /// @property
+    float GetDPIScale() const;
+
     /// Return supported fullscreen resolutions (third component is refreshRate). Will be empty if listing the resolutions is not supported on the platform (e.g. Web).
     /// @property
     ea::vector<IntVector3> GetResolutions(int monitor) const;
@@ -831,6 +844,10 @@ private:
     int width_{};
     /// Window height in pixels.
     int height_{};
+    /// Window width in points.
+    int logicalWidth_{};
+    /// Window height in points.
+    int logicalHeight_{};
     /// Window position.
     IntVector2 position_;
     /// Screen mode parameters.
