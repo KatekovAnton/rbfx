@@ -390,6 +390,8 @@ Input::Input(Context* context) :
 {
     OnRawInput.Subscribe(this, RawInputPriority::SDLRawInput, &Input::OnSDLRawInput);
 
+    context_->RequireSDL(0);
+
     context_->RequireSDL(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER);
 
     for (int i = 0; i < TOUCHID_MAX; i++)

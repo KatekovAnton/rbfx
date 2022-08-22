@@ -403,6 +403,10 @@ bool Engine::Initialize(const StringVariantMap& parameters)
             GetParameter(EP_SYSTEMUI_FLAGS).GetUInt()));
         RegisterStandardSerializableHooks();
 #endif
+#ifdef URHO3D_RMLUI
+        auto* graphics = GetSubsystem<Graphics>();
+        context_->GetSubsystem<RmlUI>()->SetScale(graphics->GetDPIScale());
+#endif
     }
     frameTimer_.Reset();
 
