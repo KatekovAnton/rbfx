@@ -56,6 +56,7 @@ enum AttributeMode
 URHO3D_FLAGSET(AttributeMode, AttributeModeFlags);
 
 class Serializable;
+class Object;
 
 /// Abstract base class for invoking attribute accessors.
 class URHO3D_API AttributeAccessor : public RefCounted

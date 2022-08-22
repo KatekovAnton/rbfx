@@ -43,6 +43,8 @@
 #include "../Scene/UnknownComponent.h"
 #include "../Scene/ValueAnimation.h"
 #include "../Scene/PrefabReference.h"
+#include "../Graphics/StateMachine.h"
+#include "../Graphics/StateMachineRunner.h"
 
 #include "../DebugNew.h"
 
@@ -1476,6 +1478,8 @@ void RegisterSceneLibrary(Context* context)
     UnknownComponent::RegisterObject(context);
     SplinePath::RegisterObject(context);
     PrefabReference::RegisterObject(context);
+    StateMachineConfig::RegisterObject(context);
+    StateMachineRunner::RegisterObject(context);
 }
 
 }

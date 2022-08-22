@@ -77,6 +77,12 @@ static const ea::vector<ea::string> directLightingModeNames =
     "Deferred PBR",
 };
 
+static const ea::vector<ea::string> brdfModeNames =
+{
+    "Lambertian",
+    "Burley"
+};
+
 static const ea::vector<ea::string> postProcessAntialiasingNames =
 {
     "None",
@@ -129,6 +135,7 @@ void RenderPipeline::RegisterObject(Context* context)
     URHO3D_ATTRIBUTE_EX("Enable Instancing", bool, settings_.instancingBuffer_.enableInstancing_, MarkSettingsDirty, true, AM_DEFAULT);
     URHO3D_ATTRIBUTE_EX("Depth Pre-Pass", bool, settings_.sceneProcessor_.depthPrePass_, MarkSettingsDirty, false, AM_DEFAULT);
     URHO3D_ENUM_ATTRIBUTE_EX("Lighting Mode", settings_.sceneProcessor_.lightingMode_, MarkSettingsDirty, directLightingModeNames, DirectLightingMode::Forward, AM_DEFAULT);
+    URHO3D_ENUM_ATTRIBUTE_EX("BRDF Mode", settings_.sceneProcessor_.brdfMode_, MarkSettingsDirty, brdfModeNames, BRDFMode::Lambertian, AM_DEFAULT);
     URHO3D_ATTRIBUTE_EX("Enable Shadows", bool, settings_.sceneProcessor_.enableShadows_, MarkSettingsDirty, true, AM_DEFAULT);
     URHO3D_ATTRIBUTE_EX("Cubemap Box Projection", bool, settings_.sceneProcessor_.cubemapBoxProjection_, MarkSettingsDirty, false, AM_DEFAULT);
     URHO3D_ATTRIBUTE_EX("PCF Kernel Size", unsigned, settings_.sceneProcessor_.pcfKernelSize_, MarkSettingsDirty, 1, AM_DEFAULT);

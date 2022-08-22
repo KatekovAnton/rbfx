@@ -533,6 +533,8 @@ bool Graphics::SetScreenMode(int width, int height, const ScreenModeParams& para
 
     int logicalWidth, logicalHeight;
     SDL_GetWindowSize(window_, &logicalWidth, &logicalHeight);
+    logicalWidth_ = logicalWidth;
+    logicalHeight_ = logicalHeight;
     screenParams_.highDPI_ = (width_ != logicalWidth) || (height_ != logicalHeight);
 
     // Reset rendertargets and viewport for the new screen mode
@@ -2242,6 +2244,8 @@ void Graphics::OnWindowResized()
 
     int logicalWidth, logicalHeight;
     SDL_GetWindowSize(window_, &logicalWidth, &logicalHeight);
+    logicalWidth_ = logicalWidth;
+    logicalHeight_ = logicalHeight;
     screenParams_.highDPI_ = (width_ != logicalWidth) || (height_ != logicalHeight);
 
     // Reset rendertargets and viewport for the new screen size. Also clean up any FBO's, as they may be screen size dependent

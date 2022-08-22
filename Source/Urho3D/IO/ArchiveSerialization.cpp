@@ -23,11 +23,30 @@
 #include "../Precompiled.h"
 
 #include "../IO/ArchiveSerialization.h"
+#include "../Resource/ResourceCache.h"
+#include "../Resource/Resource.h"
 
 #include "../Core/VariantCurve.h"
 
 namespace Urho3D
 {
+namespace Detail
+{
+
+Resource* FetchResource(Archive& archive, ResourceRef& resourceRef)
+{
+    if (resourceRef.name_.empty())
+    {
+        return nullptr;
+    }
+    else
+    {
+        ResourceCache* cache = archive.GetContext()->GetSubsystem<ResourceCache>();
+        return cache->GetResource(resourceRef.type_, resourceRef.name_);
+    }
+}
+
+} // namespace Detail
 
 namespace Detail
 {

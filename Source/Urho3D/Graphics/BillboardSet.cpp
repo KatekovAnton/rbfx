@@ -691,6 +691,7 @@ void BillboardSet::BuildAxisAngleVertexBuffer(unsigned enabledBillboards, float*
 
         Matrix3 rot(billboard.rotation_, billboard.direction_);
 
+        
         *reinterpret_cast<Vector3*>(dest) = billboard.position_ + rot * Vector3(-size.x_, size.y_);
         dest += 3;
         *reinterpret_cast<Vector3*>(dest) = rot.Column(2);

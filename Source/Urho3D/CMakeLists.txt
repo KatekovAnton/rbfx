@@ -214,6 +214,7 @@ set (THIRD_PARTY_DEPENDENCIES
     spirv-cross-msl
     spirv-cross-hlsl
     tinygltf
+    FastNoiseLite
 )
 
 if (URHO3D_MERGE_STATIC_LIBS)
@@ -429,6 +430,10 @@ endif ()
 source_group(Resources FILES ${RESOURCE_FILES})     # RESOURCE_PAKS could be empty if packaging is not requested
 target_sources(Urho3D PRIVATE ${RESOURCE_DIRS})
 
+if (MSVC)
+    target_compile_options(Urho3D PRIVATE /bigobj)
+endif ()
+
 if (URHO3D_CSHARP)
     csharp_bind_target(
         TARGET Urho3D
@@ -460,9 +465,6 @@ if (URHO3D_CSHARP)
     target_sources(Urho3D PRIVATE ${EXTRA_NATIVE_FILES} ${CMAKE_CURRENT_BINARY_DIR}/Urho3DCSharp/Urho3DCSHARP_wrap.cxx)
     if (URHO3D_SYSTEMUI)
         target_sources(Urho3D PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/ImGuiCSharp/ImGuiCSHARP_wrap.cxx)
-    endif ()
-    if (MSVC)
-        target_compile_options(Urho3D PRIVATE /bigobj)
     endif ()
 endif ()
 
