@@ -2107,7 +2107,9 @@ elseif(APPLE)
       set(HAVE_OPENGLES TRUE)
     endif()
 
-    if(SDL_VULKAN OR SDL_METAL OR SDL_RENDER_METAL)
+    # for some reason all SDL_VULKAN, SDL_METAL, SDL_RENDER_METAL and HAVE_OPENGLES are ON...
+    # most likely the integration is broken: RBFX doesn't support metal and iOS doesn't support vulkan
+    if((SDL_VULKAN OR SDL_METAL OR SDL_RENDER_METAL) AND !HAVE_OPENGLES)
       check_objc_source_compiles("
         #include <AvailabilityMacros.h>
         #import <Metal/Metal.h>
