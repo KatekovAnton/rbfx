@@ -56,3 +56,31 @@ conf_project_ios:
 	-DURHO3D_TOOLS=OFF \
 	-DURHO3D_RMLUI=ON \
 	..
+
+.PHONY: conf_project_mac
+conf_project_mac:
+	mkdir -p buildXC && \
+	cd buildXC && \
+	cmake -G Xcode \
+	-DURHO3D_SAMPLES=ON \
+	-DURHO3D_EXTRAS=OFF \
+	-DURHO3D_TOOLS=OFF \
+	-DURHO3D_RMLUI=ON \
+	..
+
+.PHONY: conf_build_lib_mac
+conf_build_lib_mac:
+	mkdir -p buildLib && \
+	cd buildLib && \
+	cmake -G Xcode \
+	-DURHO3D_SAMPLES=OFF \
+	-DURHO3D_EDITOR=OFF \
+	-DURHO3D_TESTING=OFF \
+	-DURHO3D_PROFILING=OFF \
+	-DURHO3D_EXTRAS=OFF \
+	-DURHO3D_TOOLS=OFF \
+	-DURHO3D_RMLUI=ON \
+	.. && \
+	cmake --build . --target Urho3D && \
+	cmake --build . --target install
+
