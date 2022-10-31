@@ -167,7 +167,7 @@ void NavigationMesh::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
     const Matrix3x4& worldTransform = node_->GetWorldTransform();
 
     const dtNavMesh* navMesh = navMesh_;
-
+    const Color color(1, 1, 0, 0.25);
     for (int j = 0; j < navMesh->getMaxTiles(); ++j)
     {
         const dtMeshTile* tile = navMesh->getTile(j);
@@ -183,7 +183,7 @@ void NavigationMesh::DrawDebugGeometry(DebugRenderer* debug, bool depthTest)
                 debug->AddLine(
                     worldTransform * *reinterpret_cast<const Vector3*>(&tile->verts[poly->verts[j] * 3]),
                     worldTransform * *reinterpret_cast<const Vector3*>(&tile->verts[poly->verts[(j + 1) % poly->vertCount] * 3]),
-                    Color::YELLOW,
+                    color,
                     depthTest
                 );
             }
