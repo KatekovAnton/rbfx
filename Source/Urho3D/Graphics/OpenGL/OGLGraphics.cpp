@@ -404,7 +404,7 @@ bool Graphics::SetScreenMode(int width, int height, const ScreenModeParams& para
     if (IsInitialized() && width == width_ && height == height_
         && screenParams_.EqualsExceptVSync(newParams) && screenParams_.vsync_ != newParams.vsync_)
     {
-        SDL_GL_SetSwapInterval(newParams.vsync_ ? 1 : 0);
+        SDL_GL_SetSwapInterval(newParams.vsync_ ? 1 : 2);
         screenParams_.vsync_ = newParams.vsync_;
         return true;
     }
@@ -700,7 +700,10 @@ void Graphics::EndFrame()
 
     SendEvent(E_ENDRENDERING);
 
-    SDL_GL_SwapWindow(window_);
+    {
+        URHO3D_PROFILE("SDL_GL_SwapWindow");
+        SDL_GL_SwapWindow(window_);
+    }
 
     // Clean up too large scratch buffers
     CleanupScratchBuffers();
@@ -708,6 +711,7 @@ void Graphics::EndFrame()
     // If using an external window, check it for size changes, and reset screen mode if necessary
     if (externalWindow_)
     {
+        URHO3D_PROFILE("externalWindow_");
         int width, height;
 
         SDL_GL_GetDrawableSize(window_, &width, &height);
