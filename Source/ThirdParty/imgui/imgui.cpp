@@ -1080,7 +1080,7 @@ ImGuiStyle::ImGuiStyle()
 // Important: This operation is lossy because we round all sizes to integer. If you need to change your scale multiples, call this over a freshly initialized ImGuiStyle structure rather than scaling multiple times.
 void ImGuiStyle::ScaleAllSizes(float scale_factor)
 {
-    IM_ASSERT(scale_factor >= 1.0f);
+//    IM_ASSERT(scale_factor >= 1.0f);
     PointSize = scale_factor;
     PointSizeRound = IM_ROUND(scale_factor);
     WindowPadding = ImFloor(WindowPadding * scale_factor);

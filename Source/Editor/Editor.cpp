@@ -650,11 +650,11 @@ void Editor::InitializeSystemUI()
 
     auto systemUI = GetSubsystem<SystemUI>();
     systemUI->ApplyStyleDefault(true, 1.0f);
-    systemUI->AddFont("Fonts/NotoSans-Regular.ttf", notoSansRanges, 16.f);
-    systemUI->AddFont("Fonts/" FONT_ICON_FILE_NAME_FAS, fontAwesomeIconRanges, 14.f, true);
-    systemUI->AddFont("Fonts/" FONT_ICON_FILE_NAME_FAS, fontAwesomeIconRanges, 12.f, true);
+    systemUI->AddFont("Fonts/NotoSans-Regular.ttf", notoSansRanges, 16.f/2);
+    systemUI->AddFont("Fonts/" FONT_ICON_FILE_NAME_FAS, fontAwesomeIconRanges, 14.f/2, true);
+    systemUI->AddFont("Fonts/" FONT_ICON_FILE_NAME_FAS, fontAwesomeIconRanges, 12.f/2, true);
 
-    ImFont* monoFont = systemUI->AddFont("Fonts/NotoMono-Regular.ttf", notoMonoRanges, 14.f);
+    ImFont* monoFont = systemUI->AddFont("Fonts/NotoMono-Regular.ttf", notoMonoRanges, 14.f/2);
     Project::SetMonoFont(monoFont);
 }
 
@@ -673,13 +673,13 @@ void Editor::InitializeImGuiConfig()
 
 void Editor::InitializeImGuiStyle()
 {
-    auto& style = ImGui::GetStyleTemplate();
-
+    ImGuiStyle& style = ImGui::GetStyleTemplate();
+    
     // TODO: Make configurable.
     style.WindowRounding = 3;
     style.FrameBorderSize = 0;
     style.WindowBorderSize = 1;
-    style.ItemSpacing = {4, 4};
+    style.ItemSpacing = {4 , 4 };
     ImVec4* colors = style.Colors;
     colors[ImGuiCol_Text]                   = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
     colors[ImGuiCol_TextDisabled]           = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
@@ -731,6 +731,9 @@ void Editor::InitializeImGuiStyle()
     colors[ImGuiCol_NavWindowingHighlight]  = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
     colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
     colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.44f, 0.44f, 0.44f, 0.35f);
+    
+    
+    style.ScaleAllSizes(0.25);
 }
 
 void Editor::InitializeImGuiHandlers()
