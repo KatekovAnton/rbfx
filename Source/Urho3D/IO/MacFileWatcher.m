@@ -106,7 +106,8 @@ static void CallbackFunction(ConstFSEventStreamRef streamRef, void* clientCallBa
 {
     @synchronized(changes_)
     {
-        [changes_ appendFormat:@"%c%@\n", kind, fileName];
+        NSString *str = [NSString stringWithFormat:@"%d%@\n", (int)kind, fileName];
+        [changes_ appendString:str];
     }
 }
 
@@ -162,8 +163,12 @@ bool CheckMinimalVersion(int major, int minor)
     NSArray* parts = [productVersion componentsSeparatedByString: @"."];
     if ([[parts objectAtIndex:0] integerValue] < major)
         return false;
+    if ([[parts objectAtIndex:0] integerValue] > major)
+        return true;
     if ([[parts objectAtIndex:1] integerValue] < minor)
         return false;
+    if ([[parts objectAtIndex:1] integerValue] > minor)
+        return true;
     return true;
 }
 

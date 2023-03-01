@@ -365,7 +365,8 @@ void FileWatcher::ThreadFunction()
             FileChange change{};
             for (const ea::string& fileResult : fileChanges)
             {
-                change.kind_ = (FileChangeKind)fileResult[0];   // First byte is change kind.
+                char c = fileResult[0];
+                change.kind_ = (FileChangeKind)atoi(&c);   // First byte is change kind.
                 ea::string fileName = &fileResult.at(1);
                 if (change.kind_ == FILECHANGE_RENAMED)
                 {
