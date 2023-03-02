@@ -316,17 +316,6 @@ bool Engine::Initialize(const StringVariantMap& parameters)
         graphics->SetOrientations(GetParameter(EP_ORIENTATIONS).GetString());
         graphics->SetShaderValidationEnabled(GetParameter(EP_VALIDATE_SHADERS).GetBool());
 
-        SubscribeToEvent(E_SCREENMODE, [this](StringHash, VariantMap& eventData)
-        {
-            using namespace ScreenMode;
-
-            SetParameter(EP_WINDOW_WIDTH, eventData[P_WIDTH].GetInt());
-            SetParameter(EP_WINDOW_HEIGHT, eventData[P_HEIGHT].GetInt());
-            SetParameter(EP_FULL_SCREEN, eventData[P_FULLSCREEN].GetBool());
-            SetParameter(EP_BORDERLESS, eventData[P_BORDERLESS].GetBool());
-            SetParameter(EP_MONITOR, eventData[P_MONITOR].GetInt());
-        });
-
 #ifdef URHO3D_OPENGL
         if (HasParameter(EP_FORCE_GL2))
             graphics->SetForceGL2(GetParameter(EP_FORCE_GL2).GetBool());
