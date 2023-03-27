@@ -45,8 +45,10 @@
 #  define URHO3D_STDCALL
 #endif
 
+#ifndef CONCATENATE
 #define CONCATENATE(a, b) CONCATENATE_IMPL(a, b)
 #define CONCATENATE_IMPL(a, b) a##b
+#endif
 
 #define TO_STRING(x) TO_STRING_IMPL(x)
 #define TO_STRING_IMPL(x) #x
