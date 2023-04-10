@@ -107,6 +107,8 @@ using AttributeModeFlags = Urho3D::AttributeMode;
 %csattribute(Urho3D::ObjectReflection, %arg(Urho3D::StringHash), TypeNameHash, GetTypeNameHash);
 %csattribute(Urho3D::ObjectReflection, %arg(ea::vector<AttributeInfo>), Attributes, GetAttributes);
 %csattribute(Urho3D::ObjectReflection, %arg(unsigned int), NumAttributes, GetNumAttributes);
+%csattribute(Urho3D::ObjectReflection, %arg(Urho3D::AttributeScopeHint), ScopeHint, GetScopeHint, SetScopeHint);
+%csattribute(Urho3D::ObjectReflection, %arg(Urho3D::AttributeScopeHint), EffectiveScopeHint, GetEffectiveScopeHint);
 %csattribute(Urho3D::Context, %arg(Urho3D::VariantMap), EventDataMap, GetEventDataMap);
 %csattribute(Urho3D::Context, %arg(Urho3D::VariantMap), GlobalVars, GetGlobalVars);
 %csattribute(Urho3D::Context, %arg(Urho3D::SubsystemCache), Subsystems, GetSubsystems);
@@ -120,10 +122,6 @@ using AttributeModeFlags = Urho3D::AttributeMode;
 %csattribute(Urho3D::Time, %arg(unsigned int), TimerPeriod, GetTimerPeriod, SetTimerPeriod);
 %csattribute(Urho3D::Time, %arg(float), ElapsedTime, GetElapsedTime);
 %csattribute(Urho3D::Time, %arg(float), FramesPerSecond, GetFramesPerSecond);
-%csattribute(Urho3D::WorkQueue, %arg(SharedPtr<Urho3D::WorkItem>), FreeItem, GetFreeItem);
-%csattribute(Urho3D::WorkQueue, %arg(unsigned int), NumThreads, GetNumThreads);
-%csattribute(Urho3D::WorkQueue, %arg(bool), IsCompleting, IsCompleting);
-%csattribute(Urho3D::WorkQueue, %arg(int), Tolerance, GetTolerance, SetTolerance);
 %csattribute(Urho3D::WorkQueue, %arg(int), NonThreadedWorkMs, GetNonThreadedWorkMs, SetNonThreadedWorkMs);
 %pragma(csharp) moduleimports=%{
 public static partial class E

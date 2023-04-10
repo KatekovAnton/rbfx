@@ -54,8 +54,6 @@ public:
     bool Initialize(const StringVariantMap& parameters);
     /// Initialize virtual filesystem. Implicitly called by Initialize.
     void InitializeVirtualFileSystem();
-    /// Reinitialize resource cache subsystem using parameters given. Implicitly called by Initialize. Return true if successful.
-    bool InitializeResourceCache(const StringVariantMap& parameters, bool removeOld = true);
     /// Run one frame.
     void RunFrame();
     /// Create the console and return it. May return null if engine configuration does not allow creation (headless mode).
@@ -164,6 +162,8 @@ private:
     void HandleEndFrame(StringHash eventType, VariantMap& eventData);
     /// Actually perform the exit actions.
     void DoExit();
+    /// Return log file name in OS file system.
+    ea::string GetLogFileName(const ea::string& uri) const;
 
     /// Engine parameters (default and current values).
     SharedPtr<ConfigFile> engineParameters_;

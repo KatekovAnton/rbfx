@@ -81,18 +81,27 @@ void Node::RegisterObject(Context* context)
     URHO3D_ACCESSOR_ATTRIBUTE("Is Enabled", IsEnabled, SetEnabled, bool, true, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Name", GetName, SetName, ea::string, EMPTY_STRING, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Tags", GetTags, SetTags, StringVector, Variant::emptyStringVector, AM_DEFAULT);
-    URHO3D_ACCESSOR_ATTRIBUTE("Position", GetPosition, SetPosition, Vector3, Vector3::ZERO, AM_FILE);
-    URHO3D_ACCESSOR_ATTRIBUTE("Rotation", GetRotation, SetRotation, Quaternion, Quaternion::IDENTITY, AM_FILE);
+    URHO3D_ACCESSOR_ATTRIBUTE("Position", GetPosition, SetPosition, Vector3, Vector3::ZERO, AM_DEFAULT);
+    URHO3D_ACCESSOR_ATTRIBUTE("Rotation", GetRotation, SetRotation, Quaternion, Quaternion::IDENTITY, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("Scale", GetScale, SetScale, Vector3, Vector3::ONE, AM_DEFAULT);
-    URHO3D_ATTRIBUTE("Variables", StringVariantMap, vars_, Variant::emptyStringVariantMap, AM_FILE);
+    URHO3D_ATTRIBUTE("Variables", StringVariantMap, vars_, Variant::emptyStringVariantMap, AM_DEFAULT);
 }
 
 void Node::SerializeInBlock(Archive& archive)
 {
     const bool compactSave = !archive.IsHumanReadable();
-    const PrefabArchiveFlags archiveFlags = compactSave ? PrefabArchiveFlag::CompactTypeNames : PrefabArchiveFlag::None;
     const PrefabSaveFlags saveFlags =
         compactSave ? PrefabSaveFlag::CompactAttributeNames : PrefabSaveFlag::EnumsAsStrings;
+
+    SerializeInBlock(archive, false, saveFlags);
+}
+
+void Node::SerializeInBlock(Archive& archive, bool serializeTemporary, PrefabSaveFlags saveFlags)
+{
+    const bool compactSave = !archive.IsHumanReadable();
+    const PrefabArchiveFlags archiveFlags =
+        (compactSave ? PrefabArchiveFlag::CompactTypeNames : PrefabArchiveFlag::None)
+        | (serializeTemporary ? PrefabArchiveFlag::SerializeTemporary : PrefabArchiveFlag::None);
     const PrefabLoadFlags loadFlags = PrefabLoadFlag::None;
 
     if (archive.IsInput())
@@ -121,7 +130,8 @@ void Node::LoadInternal(
         RemoveAllChildren();
 
     // Load self
-    nodePrefab.Export(this, flags);
+    if (!flags.Test(PrefabLoadFlag::IgnoreRootAttributes))
+        nodePrefab.Export(this, flags);
 
     const unsigned oldId = static_cast<unsigned>(nodePrefab.GetId());
     resolver.AddNode(oldId, this);
@@ -137,11 +147,12 @@ void Node::LoadInternal(
         const unsigned oldComponentId = static_cast<unsigned>(componentPrefab->GetId());
         Component* component = SafeCreateComponent(
             componentPrefab->GetTypeName(), componentPrefab->GetTypeNameHash(), discardIds ? 0 : oldComponentId);
-        if (loadAsTemporary)
-            component->SetTemporary(true);
 
         resolver.AddComponent(oldComponentId, component);
         componentPrefab->Export(component, flags);
+
+        if (loadAsTemporary)
+            component->SetTemporary(true);
     }
 
     // Load children
@@ -156,11 +167,13 @@ void Node::LoadInternal(
 
             const unsigned oldChildId = static_cast<unsigned>(childPrefab->GetId());
             Node* child = CreateChild(discardIds ? 0 : oldChildId);
+
+            const PrefabLoadFlags childFlags =
+                flags & ~PrefabLoadFlag::LoadAsTemporary & ~PrefabLoadFlag::IgnoreRootAttributes;
+            child->LoadInternal(*childPrefab, reader, resolver, childFlags);
+
             if (loadAsTemporary)
                 child->SetTemporary(true);
-
-            const PrefabLoadFlags childFlags = flags & ~PrefabLoadFlag::LoadAsTemporary;
-            child->LoadInternal(*childPrefab, reader, resolver, childFlags);
         }
         reader.EndChild();
     }
@@ -192,21 +205,23 @@ bool Node::Load(PrefabReader& reader, PrefabLoadFlags flags)
 
 void Node::SaveInternal(PrefabWriter& writer) const
 {
+    const bool saveTemporary = writer.GetFlags().Test(PrefabSaveFlag::SaveTemporary);
+
     writer.WriteNode(GetID(), this);
 
-    const unsigned numComponents = GetNumPersistentComponents();
+    const unsigned numComponents = saveTemporary ? GetNumComponents() : GetNumPersistentComponents();
     writer.WriteNumComponents(numComponents);
     for (Component* component : components_)
     {
-        if (component && !component->IsTemporary())
+        if (component && (saveTemporary || !component->IsTemporary()))
             writer.WriteComponent(component->GetID(), component);
     }
 
-    const unsigned numChildren = GetNumPersistentChildren();
+    const unsigned numChildren = saveTemporary ? GetNumChildren() : GetNumPersistentChildren();
     writer.WriteNumChildren(numChildren);
     for (Node* child : children_)
     {
-        if (child && !child->IsTemporary())
+        if (child && (saveTemporary || !child->IsTemporary()))
         {
             writer.BeginChild();
             child->SaveInternal(writer);
@@ -227,6 +242,45 @@ bool Node::Save(PrefabWriter& writer) const
         URHO3D_LOGERROR(e.what());
         return false;
     }
+}
+
+Node* Node::InstantiatePrefab(const NodePrefab& prefab, const Vector3& position, const Quaternion& rotation)
+{
+    Node* childNode = CreateChild();
+    PrefabReaderFromMemory reader{prefab};
+    if (!childNode->Load(reader, PrefabLoadFlag::None))
+    {
+        childNode->Remove();
+        return nullptr;
+    }
+
+    childNode->SetPosition(position);
+    childNode->SetRotation(rotation);
+    return childNode;
+}
+
+void Node::GeneratePrefab(NodePrefab& prefab) const
+{
+    const PrefabSaveFlags flags = PrefabSaveFlag::EnumsAsStrings | PrefabSaveFlag::Prefab;
+    PrefabWriterToMemory writer{prefab, flags};
+    Save(writer);
+}
+
+NodePrefab Node::GeneratePrefab() const
+{
+    NodePrefab prefab;
+    GeneratePrefab(prefab);
+    return prefab;
+}
+
+AttributeScopeHint Node::GetEffectiveScopeHint() const
+{
+    AttributeScopeHint result = AttributeScopeHint::Serializable;
+    for (Component* component : GetComponents())
+        result = ea::max(result, component->GetEffectiveScopeHint());
+    for (Node* child : GetChildren())
+        result = ea::max(result, child->GetEffectiveScopeHint());
+    return result;
 }
 
 bool Node::Load(Deserializer& source)
@@ -1413,7 +1467,7 @@ Node* Node::GetChild(StringHash nameHash, bool recursive) const
     return nullptr;
 }
 
-Node* Node::GetChildByNameOrIndex(ea::string_view name) const
+Node* Node::GetChildByNameOrIndex(ea::string_view name, bool recursive) const
 {
     if (name.empty())
         return nullptr;
@@ -1425,7 +1479,7 @@ Node* Node::GetChildByNameOrIndex(ea::string_view name) const
             return GetChild(index);
     }
 
-    return GetChild(StringHash(name));
+    return GetChild(StringHash(name), recursive);
 }
 
 Serializable* Node::GetSerializableByName(ea::string_view name) const
@@ -1444,7 +1498,7 @@ Serializable* Node::GetSerializableByName(ea::string_view name) const
     return GetNthComponent(StringHash(name), index);
 }
 
-Node* Node::FindChild(ea::string_view path) const
+Node* Node::FindChild(ea::string_view path, bool firstRecursive) const
 {
     const auto sep = path.find('/');
     const bool isLast = sep == ea::string_view::npos;
@@ -1452,8 +1506,12 @@ Node* Node::FindChild(ea::string_view path) const
     if (childName.empty())
         return nullptr;
 
-    Node* child = GetChildByNameOrIndex(childName);
-    return child && !isLast ? child->FindChild(path.substr(sep + 1)) : child;
+    const ea::string_view subPath = isLast ? ea::string_view() : path.substr(sep + 1);
+    if (childName == "**")
+        return FindChild(subPath, true);
+
+    Node* child = GetChildByNameOrIndex(childName, firstRecursive);
+    return child && !isLast ? child->FindChild(subPath) : child;
 }
 
 ea::pair<Serializable*, unsigned> Node::FindComponentAttribute(ea::string_view path) const

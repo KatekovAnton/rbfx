@@ -22,7 +22,19 @@
 
 include(${CMAKE_CURRENT_LIST_DIR}/ucm.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/VSSolution.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/CCache.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/UrhoOptions.cmake)
 
+if (EMSCRIPTEN AND "${CMAKE_GENERATOR}" STREQUAL "Ninja")
+    # Workaround for following error:
+    #   The install of the Samples target requires changing an RPATH from the build
+    #   tree, but this is not supported with the Ninja generator unless on an
+    #   ELF-based platform.  The CMAKE_BUILD_WITH_INSTALL_RPATH variable may be set
+    #   to avoid this relinking step.
+    set (CMAKE_BUILD_WITH_INSTALL_RPATH ON)
+endif ()
+
+# Ensure variable is in the cache.
 set(RBFX_CSPROJ_LIST "" CACHE STRING "A list of C# projects." FORCE)
 
 if (URHO3D_SDK)
@@ -31,12 +43,10 @@ if (URHO3D_SDK)
     set (SWIG_EXECUTABLE "${URHO3D_SDK}/bin/swig")
 endif ()
 
-if (WEB)
-    if (EMSCRIPTEN_EMCC_VERSION VERSION_LESS 2.0.17)
-        set (EMCC_WITH_SOURCE_MAPS_FLAG -g4)
-    else ()
-        set (EMCC_WITH_SOURCE_MAPS_FLAG -gsource-map --source-map-base=. -fdebug-compilation-dir='.' -gseparate-dwarf)
-    endif ()
+if (EMSCRIPTEN)
+    set (WEB ON)
+    set (EMPACKAGER python ${EMSCRIPTEN_ROOT_PATH}/tools/file_packager.py CACHE PATH "file_packager.py")
+    set (EMCC_WITH_SOURCE_MAPS_FLAG -gsource-map --source-map-base=. -fdebug-compilation-dir='.' -gseparate-dwarf)
 endif ()
 
 # Prevent use of undefined build type, default to Debug. Done here instead of UrhoOptions.cmake so that user projects
@@ -60,23 +70,23 @@ function (create_symlink SOURCE DESTINATION)
     else ()
         set (ABS_DESTINATION ${CMAKE_BINARY_DIR}/${DESTINATION})
     endif ()
-    if (CMAKE_HOST_WIN32)
+    if (CMAKE_HOST_WIN32 OR CMAKE_HOST_SYSTEM MATCHES "^Windows-")
         if (IS_DIRECTORY ${ABS_SOURCE})
-            set (SLASH_D /D)
+            set (SLASH_J /J)
         else ()
-            unset (SLASH_D)
+            unset (SLASH_J)
         endif ()
         set (RESULT_CODE 1)
-        if(${CMAKE_SYSTEM_VERSION} GREATER_EQUAL 6.0)
+        if(${CMAKE_HOST_SYSTEM_VERSION} GREATER_EQUAL 6.0.0)
             if (NOT EXISTS ${ABS_DESTINATION})
                 # Have to use string-REPLACE as file-TO_NATIVE_PATH does not work as expected with MinGW on "backward slash" host system
                 string (REPLACE / \\ BACKWARD_ABS_DESTINATION ${ABS_DESTINATION})
                 string (REPLACE / \\ BACKWARD_ABS_SOURCE ${ABS_SOURCE})
-                execute_process (COMMAND cmd /C mklink ${SLASH_D} ${BACKWARD_ABS_DESTINATION} ${BACKWARD_ABS_SOURCE} OUTPUT_QUIET ERROR_QUIET RESULT_VARIABLE RESULT_CODE)
+                execute_process (COMMAND cmd /C mklink ${SLASH_J} ${BACKWARD_ABS_DESTINATION} ${BACKWARD_ABS_SOURCE} OUTPUT_QUIET ERROR_QUIET RESULT_VARIABLE RESULT_CODE)
             endif ()
         endif ()
         if (NOT "${RESULT_CODE}" STREQUAL "0")
-            if (SLASH_D)
+            if (SLASH_J)
                 set (COMMAND COMMAND ${CMAKE_COMMAND} -E copy_directory ${ABS_SOURCE} ${ABS_DESTINATION})
             else ()
                 set (COMMAND COMMAND ${CMAKE_COMMAND} -E copy_if_different ${ABS_SOURCE} ${ABS_DESTINATION})
@@ -331,11 +341,6 @@ function (package_resources_web)
         set (PRELOAD_FILES ${PRELOAD_FILES} ${file}@${rel_file})
     endforeach ()
 
-    # TODO: Do we need it? It breaks debug build.
-    # See https://github.com/emscripten-core/emscripten/issues/10555
-    #if (CMAKE_BUILD_TYPE STREQUAL Debug AND EMSCRIPTEN_EMCC_VERSION VERSION_GREATER 1.32.2)
-    #    set (SEPARATE_METADATA --separate-metadata)
-    #endif ()
     get_filename_component(LOADER_DIR "${PAK_OUTPUT}" DIRECTORY)
     add_custom_target("${PAK_OUTPUT}"
         COMMAND ${EMPACKAGER} ${PAK_RELATIVE_DIR}${PAK_OUTPUT}.data --preload ${PRELOAD_FILES} --js-output=${PAK_RELATIVE_DIR}${PAK_OUTPUT} --use-preload-cache ${SEPARATE_METADATA}

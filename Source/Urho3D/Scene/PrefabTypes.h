@@ -53,6 +53,9 @@ enum class PrefabArchiveFlag
     /// Whether to compact type names to hashes.
     /// Useful for large structures not intended for readability.
     CompactTypeNames = 1 << 2,
+    /// Whether to serialize temporary objects.
+    /// Useful if the exact serialization is required.
+    SerializeTemporary = 1 << 3,
 };
 URHO3D_FLAGSET(PrefabArchiveFlag, PrefabArchiveFlags);
 
@@ -69,6 +72,10 @@ enum class PrefabSaveFlag
     EnumsAsStrings = 1 << 1,
     /// Whether to save default attribute values.
     SaveDefaultValues = 1 << 2,
+    /// Whether the prefab is saved. Attributes without AM_PREFAB flag will be ignored.
+    Prefab = 1 << 3,
+    /// Whether to save temporary objects.
+    SaveTemporary = 1 << 4,
 };
 URHO3D_FLAGSET(PrefabSaveFlag, PrefabSaveFlags);
 
@@ -88,6 +95,10 @@ enum class PrefabLoadFlag
     LoadAsTemporary = 1 << 3,
     /// Whether to discard and reassign IDs.
     DiscardIds = 1 << 4,
+    /// Whether to ignore attributes of the root node.
+    IgnoreRootAttributes = 1 << 5,
+    /// Keep "temporary" state as is.
+    KeepTemporaryState = 1 << 6,
 };
 URHO3D_FLAGSET(PrefabLoadFlag, PrefabLoadFlags);
 

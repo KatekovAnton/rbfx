@@ -56,8 +56,6 @@
 %ignore Urho3D::EP_PLUGINS;
 %constant const char* EpRefreshRate = "RefreshRate";
 %ignore Urho3D::EP_REFRESH_RATE;
-%constant const char* EpRenderPath = "RenderPath";
-%ignore Urho3D::EP_RENDER_PATH;
 %constant const char* EpResourcePackages = "ResourcePackages";
 %ignore Urho3D::EP_RESOURCE_PACKAGES;
 %constant const char* EpResourcePaths = "ResourcePaths";
@@ -142,6 +140,7 @@
 %csattribute(Urho3D::ApplicationState, %arg(Urho3D::UIElement *), UIRoot, GetUIRoot);
 %csattribute(Urho3D::ApplicationState, %arg(Urho3D::IntVector2), UICustomSize, GetUICustomSize, SetUICustomSize);
 %csattribute(Urho3D::ApplicationState, %arg(Urho3D::Color), DefaultFogColor, GetDefaultFogColor, SetDefaultFogColor);
+%csattribute(Urho3D::ApplicationState, %arg(Urho3D::ActionManager *), ActionManager, GetActionManager);
 %csattribute(Urho3D::StateManager, %arg(Urho3D::ApplicationState *), State, GetState);
 %csattribute(Urho3D::StateManager, %arg(Urho3D::StringHash), TargetState, GetTargetState);
 %csattribute(Urho3D::StateManager, %arg(Urho3D::Window *), FadeOverlay, GetFadeOverlay);

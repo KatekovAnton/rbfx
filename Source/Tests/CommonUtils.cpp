@@ -22,6 +22,7 @@
 
 #include "CommonUtils.h"
 
+#include "Urho3D/IO/FileSystem.h"
 #include "Urho3D/Input/InputEvents.h"
 #include "Urho3D/Input/Input.h"
 
@@ -76,10 +77,15 @@ void ResetContext()
 SharedPtr<Context> CreateCompleteContext()
 {
     auto context = MakeShared<Context>();
+    context->SetUnitTest(true);
     auto engine = new Engine(context);
+    auto fs = context->GetSubsystem<FileSystem>();
+    auto exeDir = GetParentPath(fs->GetProgramFileName());
     StringVariantMap parameters;
     parameters[EP_HEADLESS] = true;
     parameters[EP_LOG_QUIET] = true;
+    parameters[EP_RESOURCE_PATHS] = "CoreData;Data";
+    parameters[EP_RESOURCE_PREFIX_PATHS] = Format("{};{}", exeDir, GetParentPath(exeDir));
     const bool engineInitialized = engine->Initialize(parameters);
 
     engine->SubscribeToEvent(E_LOGMESSAGE, PrintError);

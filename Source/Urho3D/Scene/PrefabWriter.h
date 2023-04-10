@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <Urho3D/Scene/ScenePrefab.h>
+#include <Urho3D/Scene/NodePrefab.h>
 
 namespace Urho3D
 {
@@ -48,13 +48,14 @@ public:
     virtual void BeginChild() = 0;
     virtual void EndChild() = 0;
     virtual bool IsEOF() const = 0;
+    virtual PrefabSaveFlags GetFlags() const = 0;
 };
 
-/// Utility class to write prefab data to ScenePrefab.
+/// Utility class to write prefab data to NodePrefab.
 class URHO3D_API PrefabWriterToMemory : public PrefabWriter
 {
 public:
-    explicit PrefabWriterToMemory(ScenePrefab& scenePrefab, PrefabSaveFlags flags = {});
+    explicit PrefabWriterToMemory(NodePrefab& nodePrefab, PrefabSaveFlags flags = {});
 
     void WriteNode(unsigned id, const Serializable* node) override;
     void WriteNumComponents(unsigned numComponents) override;
@@ -63,17 +64,18 @@ public:
     void BeginChild() override;
     void EndChild() override;
     bool IsEOF() const override { return stack_.empty(); }
+    PrefabSaveFlags GetFlags() const override { return flags_; }
 
 private:
-    ScenePrefab& CurrentNode() const;
+    NodePrefab& CurrentNode() const;
     void StartChildren();
     void NextNode();
     void CheckEOF();
 
-    ScenePrefab& scenePrefab_;
+    NodePrefab& nodePrefab_;
     const PrefabSaveFlags flags_;
 
-    ea::vector<ea::pair<ScenePrefab*, unsigned>> stack_;
+    ea::vector<ea::pair<NodePrefab*, unsigned>> stack_;
     unsigned componentIndex_{};
 };
 
@@ -91,6 +93,7 @@ public:
     void BeginChild() override;
     void EndChild() override;
     bool IsEOF() const override { return eof_; }
+    PrefabSaveFlags GetFlags() const override { return saveFlags_; }
 
 private:
     void NextSerializable();

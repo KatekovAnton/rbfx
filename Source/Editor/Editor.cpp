@@ -76,6 +76,7 @@
 #include <Urho3D/Engine/EngineEvents.h>
 #include <Urho3D/Graphics/Graphics.h>
 #include <Urho3D/IO/ArchiveSerialization.h>
+#include <Urho3D/IO/VirtualFileSystem.h>
 #include <Urho3D/Input/Input.h>
 #include <Urho3D/Resource/ResourceCache.h>
 #include <Urho3D/SystemUI/Console.h>
@@ -196,6 +197,7 @@ void Editor::Setup()
     engineParameters_[EP_APPLICATION_NAME] = GetWindowTitle();
     engineParameters_[EP_HEADLESS] = false;
     engineParameters_[EP_FULL_SCREEN] = false;
+    engineParameters_[EP_BORDERLESS] = false;
     engineParameters_[EP_LOG_LEVEL] = LOG_DEBUG;
     engineParameters_[EP_WINDOW_RESIZABLE] = true;
     engineParameters_[EP_AUTOLOAD_PATHS] = "";
@@ -219,6 +221,7 @@ void Editor::Start()
     auto cache = GetSubsystem<ResourceCache>();
     auto input = GetSubsystem<Input>();
     auto fs = GetSubsystem<FileSystem>();
+    auto vfs = GetSubsystem<VirtualFileSystem>();
 
     const bool isHeadless = engine_->IsHeadless();
 
@@ -233,7 +236,7 @@ void Editor::Start()
     input->SetMouseVisible(true);
     input->SetEnabled(false);
 
-    cache->SetAutoReloadResources(true);
+    vfs->SetWatching(true);
 
     engine_->SetAutoExit(false);
 
@@ -269,7 +272,7 @@ void Editor::Start()
 void Editor::Stop()
 {
     auto workQueue = GetSubsystem<WorkQueue>();
-    workQueue->Complete(0);
+    workQueue->CompleteAll();
 
     CloseProject();
 
@@ -327,7 +330,7 @@ void Editor::Render()
         // Exit immediately if requested.
         if (exiting_)
         {
-            context_->GetSubsystem<WorkQueue>()->Complete(0);
+            context_->GetSubsystem<WorkQueue>()->CompleteAll();
             engine_->Exit();
         }
 
@@ -447,16 +450,20 @@ void Editor::Render()
     // Dialog for a warning when application is being closed with unsaved resources.
     if (exiting_)
     {
-        if (!context_->GetSubsystem<WorkQueue>()->IsCompleted(0))
+        auto workQueue = context_->GetSubsystem<WorkQueue>();
+        if (!workQueue->IsCompleted())
         {
-            ui::OpenPopup("Completing Tasks");
+            if (!numIncompleteTasks_)
+                numIncompleteTasks_ = workQueue->GetNumIncomplete();
+            const unsigned numProcessedTasks =
+                *numIncompleteTasks_ - ea::min(workQueue->GetNumIncomplete(), *numIncompleteTasks_);
 
+            ui::OpenPopup("Completing Tasks");
             if (ui::BeginPopupModal("Completing Tasks", nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoResize |
                                                                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_Popup))
             {
                 ui::TextUnformatted("Some tasks are in progress and are being completed. Please wait.");
-                static float totalIncomplete = context_->GetSubsystem<WorkQueue>()->GetNumIncomplete(0);
-                ui::ProgressBar(100.f / totalIncomplete * Min(totalIncomplete - (float)context_->GetSubsystem<WorkQueue>()->GetNumIncomplete(0), totalIncomplete));
+                ui::ProgressBar(100.f * numProcessedTasks / *numIncompleteTasks_);
                 ui::EndPopup();
             }
         }
@@ -470,10 +477,13 @@ void Editor::Render()
         }
         else
         {
-            context_->GetSubsystem<WorkQueue>()->Complete(0);
+            context_->GetSubsystem<WorkQueue>()->CompleteAll();
             engine_->Exit();
         }
     }
+
+    if (!exiting_)
+        numIncompleteTasks_ = ea::nullopt;
 
     const ea::string title = GetWindowTitle();
     if (windowTitle_ != title)

@@ -35,7 +35,7 @@
 #include "../Resource/JSONValue.h"
 #include "../Resource/ResourceCache.h"
 #include "../Scene/SceneEvents.h"
-#include "../Scene/ScenePrefab.h"
+#include "../Scene/NodePrefab.h"
 #include "../Scene/Serializable.h"
 
 #include <EASTL/fixed_vector.h>
@@ -384,8 +384,9 @@ bool Serializable::LoadFile(const ea::string& resourceName)
 {
     ResourceCache* cache = GetSubsystem<ResourceCache>();
     // Router may redirect to different file.
-    ea::string realResourceName = resourceName;
-    cache->RouteResourceName(realResourceName, RESOURCE_CHECKEXISTS);
+    auto realResourceId = FileIdentifier::FromUri(resourceName);
+    cache->RouteResourceName(realResourceId);
+    const ea::string realResourceName = realResourceId.ToUri();
     ea::string extension = GetExtension(realResourceName);
 
     if (extension == ".xml")
@@ -397,17 +398,26 @@ bool Serializable::LoadFile(const ea::string& resourceName)
 
 void Serializable::SerializeInBlock(Archive& archive)
 {
+    SerializeInBlock(archive, false);
+}
+
+void Serializable::SerializeInBlock(Archive& archive, bool serializeTemporary)
+{
     const bool compactSave = !archive.IsHumanReadable();
+    const PrefabArchiveFlags flags = PrefabArchiveFlag::IgnoreSerializableId | PrefabArchiveFlag::IgnoreSerializableType
+        | (serializeTemporary ? PrefabArchiveFlag::SerializeTemporary : PrefabArchiveFlag::None);
 
     SerializablePrefab prefab;
 
     if (!archive.IsInput())
         prefab.Import(this);
 
-    prefab.SerializeInBlock(archive, PrefabArchiveFlag::IgnoreSerializableId, compactSave);
+    prefab.SerializeInBlock(archive, flags, compactSave);
 
     if (archive.IsInput())
         prefab.Export(this);
+
+    ApplyAttributes();
 }
 
 bool Serializable::SetAttribute(unsigned index, const Variant& value)

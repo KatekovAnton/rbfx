@@ -30,6 +30,7 @@
 #include "../Project/CreateDefaultScene.h"
 #include "../Project/ResourceEditorTab.h"
 
+#include <Urho3D/IO/MountedDirectory.h>
 #include <Urho3D/Core/ProcessUtils.h>
 #include <Urho3D/Engine/Engine.h>
 #include <Urho3D/Engine/EngineDefs.h>
@@ -144,23 +145,31 @@ ea::pair<ea::string, ea::string> ParseCommand(const ea::string& command)
 ResourceCacheGuard::ResourceCacheGuard(Context* context)
     : context_(context)
 {
-    auto cache = context_->GetSubsystem<ResourceCache>();
-    oldResourceDirs_ = cache->GetResourceDirs();
-    for (const ea::string& resourceDir : oldResourceDirs_)
+    const auto vfs = context_->GetSubsystem<VirtualFileSystem>();
+    for (unsigned i = 0; i < vfs->NumMountPoints(); ++i)
     {
-        if (oldCoreData_.empty() && resourceDir.ends_with("/CoreData/"))
-            oldCoreData_ = resourceDir;
-        if (oldEditorData_.empty() && resourceDir.ends_with("/EditorData/"))
-            oldEditorData_ = resourceDir;
+        SharedPtr<MountPoint> mountPoint{vfs->GetMountPoint(i)};
+        oldResourceDirs_.push_back(mountPoint);
+        auto* dir = dynamic_cast<MountedDirectory*>(mountPoint.Get());
+        if (dir)
+        {
+            const auto& resourceDir = dir->GetDirectory();
+            if (oldCoreData_.empty() && resourceDir.ends_with("/CoreData/"))
+                oldCoreData_ = resourceDir;
+            if (oldEditorData_.empty() && resourceDir.ends_with("/EditorData/"))
+                oldEditorData_ = resourceDir;
+        }
     }
 }
 
 ResourceCacheGuard::~ResourceCacheGuard()
 {
-    auto cache = context_->GetSubsystem<ResourceCache>();
-    cache->RemoveAllResourceDirs();
-    for (const ea::string& resourceDir : oldResourceDirs_)
-        cache->AddResourceDir(resourceDir);
+    auto vfs = context_->GetSubsystem<VirtualFileSystem>();
+    vfs->UnmountAll();
+    for (const auto& mountPoint : oldResourceDirs_)
+    {
+        vfs->Mount(mountPoint);
+    }
 }
 
 bool AnalyzeFileContext::HasXMLRoot(ea::string_view root) const
@@ -230,6 +239,7 @@ Project::Project(Context* context, const ea::string& projectPath, const ea::stri
     assetManager_->OnInitialized.Subscribe(this, [=](Project*) mutable { initializationGuard.reset(); });
 
     IgnoreFileNamePattern("*.user.json");
+    IgnoreFileNamePattern("*.blend1");
 
     ApplyPlugins();
 
@@ -326,6 +336,9 @@ void Project::Destroy()
 
 Project::~Project()
 {
+    auto cache = GetSubsystem<ResourceCache>();
+    cache->ReleaseAllResources(true);
+
     --numActiveProjects;
     URHO3D_ASSERT(numActiveProjects == 0);
 
@@ -438,14 +451,16 @@ ResourceFileDescriptor Project::GetResourceDescriptor(const ea::string& resource
     return result;
 }
 
-void Project::SaveFileDelayed(const ea::string& fileName, const ea::string& resourceName, const SharedByteVector& bytes)
+void Project::SaveFileDelayed(const ea::string& fileName, const ea::string& resourceName, const SharedByteVector& bytes,
+    const FileSavedCallback& onSaved)
 {
-    delayedFileSaves_[resourceName] = PendingFileSave{fileName, bytes};
+    delayedFileSaves_[resourceName] = PendingFileSave{fileName, bytes, onSaved};
 }
 
-void Project::SaveFileDelayed(Resource* resource)
+void Project::SaveFileDelayed(Resource* resource, const FileSavedCallback& onSaved)
 {
-    delayedFileSaves_[resource->GetName()] = PendingFileSave{resource->GetAbsoluteFileName(), nullptr, SharedPtr<Resource>(resource)};
+    delayedFileSaves_[resource->GetName()] =
+        PendingFileSave{resource->GetAbsoluteFileName(), nullptr, onSaved, SharedPtr<Resource>(resource)};
 }
 
 void Project::IgnoreFileNamePattern(const ea::string& pattern)
@@ -547,7 +562,7 @@ void Project::EnsureDirectoryInitialized()
     if (fs->DirExists(projectPath_ + "Resources/"))
         dataPath_ = projectPath_ + "Resources/";
     if (fs->FileExists(dataPath_ + "AssetPipeline.json"))
-        fs->Rename(dataPath_ + "AssetPipeline.json", dataPath_ + "Default.AssetPipeline.json");
+        fs->Rename(dataPath_ + "AssetPipeline.json", dataPath_ + "Default.assetpipeline");
 
     if (!fs->DirExists(dataPath_))
     {
@@ -572,7 +587,7 @@ void Project::InitializeDefaultProject()
     launchManager_->AddConfiguration(LaunchConfiguration{configName, SceneViewerApplication::GetStaticPluginName()});
     currentLaunchConfiguration_ = configName;
 
-    const ea::string defaultSceneName = "Scenes/DefaultScene.xml";
+    const ea::string defaultSceneName = "Scenes/Default.scene";
     DefaultSceneParameters params;
     params.highQuality_ = true;
     params.createObjects_ = true;
@@ -581,7 +596,7 @@ void Project::InitializeDefaultProject()
     const auto request = MakeShared<OpenResourceRequest>(context_, defaultSceneName);
     ProcessRequest(request, nullptr);
 
-    const ea::string defaultAssetPipeline = "Default.AssetPipeline.json";
+    const ea::string defaultAssetPipeline = "Default.assetpipeline";
     CreateAssetPipeline(context_, dataPath_ + defaultAssetPipeline);
 
     Save();
@@ -592,14 +607,10 @@ void Project::InitializeResourceCache()
     const auto engine = GetSubsystem<Engine>();
     const auto cache = GetSubsystem<ResourceCache>();
     cache->ReleaseAllResources(true);
-    cache->RemoveAllResourceDirs();
-    cache->AddResourceDir(dataPath_);
-    cache->AddResourceDir(coreDataPath_);
-    cache->AddResourceDir(cachePath_);
-    cache->AddResourceDir(oldCacheState_.GetEditorData());
 
     const auto vfs = GetSubsystem<VirtualFileSystem>();
     vfs->UnmountAll();
+    vfs->MountRoot();
     vfs->MountDir(oldCacheState_.GetEditorData());
     vfs->MountDir(coreDataPath_);
     vfs->MountDir(dataPath_);
@@ -796,7 +807,11 @@ void Project::ProcessDelayedSaves(bool forceSave)
             delayedSave.resource_->SaveFile(delayedSave.fileName_);
         }
 
-        if (fileExists)
+        bool needReload = !fileExists;
+        if (delayedSave.onSaved_)
+            delayedSave.onSaved_(delayedSave.fileName_, resourceName, needReload);
+
+        if (!needReload)
             cache->IgnoreResourceReload(resourceName);
 
         delayedSave.Clear();

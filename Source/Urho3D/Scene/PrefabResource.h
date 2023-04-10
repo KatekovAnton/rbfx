@@ -23,22 +23,39 @@
 #pragma once
 
 #include <Urho3D/Resource/Resource.h>
-#include <Urho3D/Scene/ScenePrefab.h>
+#include <Urho3D/Scene/NodePrefab.h>
 
 namespace Urho3D
 {
 
 /// Prefab resource.
 /// Constains representation of nodes and components with attributes, ready to be instantiated.
-class URHO3D_API PrefabResource : public Resource
+class URHO3D_API PrefabResource : public SimpleResource
 {
-    URHO3D_OBJECT(PrefabResource, Resource)
+    URHO3D_OBJECT(PrefabResource, SimpleResource)
 
 public:
     explicit PrefabResource(Context* context);
     ~PrefabResource() override;
 
+    static void RegisterObject(Context* context);
+
+    void NormalizeIds();
+
+    void SerializeInBlock(Archive& archive) override;
+
+    const NodePrefab& GetScenePrefab() const { return prefab_; }
+    NodePrefab& GetMutableScenePrefab() { return prefab_; }
+
+    const NodePrefab& GetNodePrefab() const;
+    NodePrefab& GetMutableNodePrefab();
+
+    const NodePrefab& GetNodePrefabSlice(ea::string_view path) const;
+
 private:
+    bool LoadLegacyXML(const XMLElement& source) override;
+
+    NodePrefab prefab_;
 };
 
 } // namespace Urho3D

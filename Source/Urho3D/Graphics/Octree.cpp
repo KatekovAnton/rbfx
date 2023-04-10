@@ -47,32 +47,8 @@
 namespace Urho3D
 {
 
-namespace
-{
-
-/// Unused vector of drawables.
-static ea::vector<Drawable*> unusedDrawablesVector;
-
-}
-
 static const float DEFAULT_OCTREE_SIZE = 1000.0f;
 static const int DEFAULT_OCTREE_LEVELS = 8;
-
-void UpdateDrawablesWork(const WorkItem* item, unsigned threadIndex)
-{
-    URHO3D_PROFILE("UpdateDrawablesWork");
-    const FrameInfo& frame = *(reinterpret_cast<FrameInfo*>(item->aux_));
-    auto** start = reinterpret_cast<Drawable**>(item->start_);
-    auto** end = reinterpret_cast<Drawable**>(item->end_);
-
-    while (start != end)
-    {
-        Drawable* drawable = *start;
-        if (drawable)
-            drawable->Update(frame);
-        ++start;
-    }
-}
 
 inline bool CompareRayQueryResults(const RayQueryResult& lhs, const RayQueryResult& rhs)
 {
@@ -286,7 +262,7 @@ void Octant::GetDrawablesInternal(RayOctreeQuery& query) const
     if (octantDist >= query.maxDistance_)
         return;
 
-    if (drawables_.size())
+    if (!drawables_.empty())
     {
         auto** start = const_cast<Drawable**>(&drawables_[0]);
         Drawable** end = start + drawables_.size();
@@ -498,30 +474,12 @@ void Octree::Update(const FrameInfo& frame)
 
         pendingNodeTransforms_.Clear();
 
-        int numWorkItems = queue->GetNumThreads() + 1; // Worker threads + main thread
-        int drawablesPerItem = Max((int)(drawableUpdates_.size() / numWorkItems), 1);
-
-        auto start = drawableUpdates_.begin();
-        // Create a work item for each thread
-        for (int i = 0; i < numWorkItems; ++i)
+        ForEachParallel(queue, drawableUpdates_, [this, &frame](unsigned, Drawable* drawable)
         {
-            SharedPtr<WorkItem> item = queue->GetFreeItem();
-            item->priority_ = M_MAX_UNSIGNED;
-            item->workFunction_ = UpdateDrawablesWork;
-            item->aux_ = const_cast<FrameInfo*>(&frame);
+            if (drawable)
+                drawable->Update(frame);
+        });
 
-            auto end = drawableUpdates_.end();
-            if (i < numWorkItems - 1 && end - start > drawablesPerItem)
-                end = start + drawablesPerItem;
-
-            item->start_ = &(*start);
-            item->end_ = &(*end);
-            queue->AddWorkItem(item);
-
-            start = end;
-        }
-
-        queue->Complete(M_MAX_UNSIGNED);
         scene->EndThreadedUpdate();
     }
 

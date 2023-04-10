@@ -311,6 +311,7 @@ namespace SDL
     public global::Urho3DNet.Graphics Graphics => (global::Urho3DNet.Graphics)Subsystems.Get(new StringHash("Graphics"));
     public global::Urho3DNet.Renderer Renderer => (global::Urho3DNet.Renderer)Subsystems.Get(new StringHash("Renderer"));
     public global::Urho3DNet.Log Log => (global::Urho3DNet.Log)Subsystems.Get(new StringHash("Log"));
+    public global::Urho3DNet.VirtualFileSystem VirtualFileSystem => (global::Urho3DNet.VirtualFileSystem)Subsystems.Get(new StringHash("VirtualFileSystem"));
   %}
 }
 #if URHO3D_NETWORK
@@ -423,12 +424,14 @@ public:
 %interface_custom("%s", "I%s", Urho3D::AbstractFile);
 URHO3D_REFCOUNTED_INTERFACE(Urho3D::AbstractFile, Urho3D::RefCounted);
 %include "Urho3D/IO/AbstractFile.h"
+%include "Urho3D/IO/ScanFlags.h"
 %include "Urho3D/IO/Compression.h"
 %include "Urho3D/IO/File.h"
 %include "Urho3D/IO/Log.h"
 %include "Urho3D/IO/MemoryBuffer.h"
 %include "Urho3D/IO/VectorBuffer.h"
 %include "Urho3D/IO/FileSystem.h"
+%include "Urho3D/IO/FileIdentifier.h"
 %include "Urho3D/IO/MountPoint.h"
 %include "Urho3D/IO/VirtualFileSystem.h"
 %include "Urho3D/IO/PackageFile.h"
@@ -533,6 +536,7 @@ public:
 %include "Urho3D/Scene/UnknownComponent.h"
 %include "Urho3D/Scene/TrackedComponent.h"
 %include "Urho3D/Scene/PrefabReference.h"
+%include "Urho3D/Scene/PrefabResource.h"
 
 // --------------------------------------- Extra components ---------------------------------------
 %include "Urho3D/Input/FreeFlyController.h"
@@ -553,6 +557,29 @@ public:
 %include "Urho3D/Audio/SoundSource.h"
 %include "Urho3D/Audio/SoundSource3D.h"
 
+// --------------------------------------- Actions ---------------------------------------
+
+%include "Urho3D/Actions/BaseAction.h"
+%include "Urho3D/Actions/ActionSet.h"
+%include "Urho3D/Actions/ActionBuilder.h"
+%include "Urho3D/Actions/ActionState.h"
+%include "Urho3D/Actions/ActionManager.h"
+%include "Urho3D/Actions/FiniteTimeAction.h"
+%include "Urho3D/Actions/FiniteTimeActionState.h"
+%include "Urho3D/Actions/ActionInstant.h"
+%include "Urho3D/Actions/ActionInstantState.h"
+%include "Urho3D/Actions/AttributeAction.h"
+%include "Urho3D/Actions/AttributeActionState.h"
+%include "Urho3D/Actions/Attribute.h"
+%include "Urho3D/Actions/CallFunc.h"
+%include "Urho3D/Actions/Move.h"
+%include "Urho3D/Actions/Ease.h"
+%include "Urho3D/Actions/Parallel.h"
+%include "Urho3D/Actions/Sequence.h"
+%include "Urho3D/Actions/Misc.h"
+%include "Urho3D/Actions/Repeat.h"
+%include "Urho3D/Actions/ShaderParameter.h"
+
 // --------------------------------------- IK ---------------------------------------
 #if defined(URHO3D_IK)
 %ignore Urho3D::IKSolverComponent::Initialize;
@@ -568,10 +595,8 @@ public:
 %ignore Urho3D::PointOctreeQuery::TestDrawables;
 %ignore Urho3D::BoxOctreeQuery::TestDrawables;
 %ignore Urho3D::OctreeQuery::TestDrawables;
-%ignore Urho3D::UpdateDrawablesWork;
 %ignore Urho3D::ProcessLightWork;
 %ignore Urho3D::CheckVisibilityWork;
-%ignore Urho3D::CheckDrawableVisibilityWork;
 %ignore Urho3D::ELEMENT_TYPESIZES;
 %ignore Urho3D::ScratchBuffer;
 %ignore Urho3D::Drawable::batches_;
@@ -637,6 +662,7 @@ public:
 %ignore Urho3D::AnimationState::CalculateModelTracks;
 %ignore Urho3D::AnimationState::CalculateNodeTracks;
 %ignore Urho3D::AnimationState::CalculateAttributeTracks;
+%ignore Urho3D::Animation::GetVariantTracks;
 %rename(DrawableFlags) Urho3D::DrawableFlag;
 
 %apply void* VOID_INT_PTR {
@@ -704,6 +730,13 @@ public:
 %include "Urho3D/Graphics/Renderer.h"
 %include "Urho3D/Graphics/Graphics.h"
 %include "Urho3D/Graphics/OutlineGroup.h"
+
+%include "Urho3D/Particles/ParticleGraphPin.h"
+%include "Urho3D/Particles/ParticleGraphNode.h"
+%include "Urho3D/Particles/ParticleGraphSystem.h"
+%include "Urho3D/Particles/ParticleGraphLayer.h"
+%include "Urho3D/Particles/ParticleGraphEffect.h"
+%include "Urho3D/Particles/ParticleGraphEmitter.h"
 
 // ------------------------------------- RenderPipeline -------------------------------------
 %include "generated/Urho3D/_pre_renderpipeline.i"

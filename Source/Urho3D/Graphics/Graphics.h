@@ -30,6 +30,7 @@
 #include "../Graphics/GraphicsDefs.h"
 #include "../Graphics/ShaderVariation.h"
 #include "../Graphics/PipelineState.h"
+#include "../IO/FileIdentifier.h"
 #include "../Math/Color.h"
 #include "../Math/Plane.h"
 #include "../Math/Rect.h"
@@ -80,13 +81,22 @@ struct ScratchBuffer
     bool reserved_;
 };
 
+/// Window mode.
+enum class WindowMode
+{
+    /// Windowed.
+    Windowed,
+    /// Borderless "full-screen" window.
+    Borderless,
+    /// Native full-screen.
+    Fullscreen,
+};
+
 /// Screen mode parameters.
 struct ScreenModeParams
 {
-    /// Whether to use fullscreen mode.
-    bool fullscreen_{};
-    /// Whether to hide window borders. Window is always borderless in fullscreen.
-    bool borderless_{};
+    /// Window mode.
+    WindowMode windowMode_{};
     /// Whether the window is resizable.
     bool resizable_{};
     /// Whether the high DPI is enabled.
@@ -108,8 +118,7 @@ struct ScreenModeParams
     /// Compare contents except vsync flag.
     bool EqualsExceptVSync(const ScreenModeParams& rhs) const
     {
-        return fullscreen_ == rhs.fullscreen_
-            && borderless_ == rhs.borderless_
+        return windowMode_ == rhs.windowMode_
             && resizable_ == rhs.resizable_
             && highDPI_ == rhs.highDPI_
             // && vsync_ == rhs.vsync_
@@ -119,6 +128,10 @@ struct ScreenModeParams
             && refreshRate_ == rhs.refreshRate_
             && gpuDebug_ == rhs.gpuDebug_;
     }
+
+    bool IsWindowed() const { return windowMode_ == WindowMode::Windowed; }
+    bool IsFullscreen() const { return windowMode_ == WindowMode::Fullscreen; }
+    bool IsBorderless() const { return windowMode_ == WindowMode::Borderless; }
 
     /// Compare for equality with another parameter set.
     bool operator ==(const ScreenModeParams& rhs) const
@@ -358,7 +371,7 @@ public:
     void PrecacheShaders(Deserializer& source);
     /// Set shader cache directory, Direct3D only. This can either be an absolute path or a path within the resource system.
     /// @property
-    void SetShaderCacheDir(const ea::string& path);
+    void SetShaderCacheDir(const FileIdentifier& path);
     /// Set global shader defines.
     void SetGlobalShaderDefines(const ea::string& globalShaderDefines);
 
@@ -411,14 +424,14 @@ public:
 
     /// Return whether window is fullscreen.
     /// @property
-    bool GetFullscreen() const { return screenParams_.fullscreen_; }
+    bool GetFullscreen() const { return screenParams_.IsFullscreen(); }
 
     /// Return whether gpu debug is enabled.
     bool GetGPUDebug() const { return screenParams_.gpuDebug_; }
 
     /// Return whether window is borderless.
     /// @property
-    bool GetBorderless() const { return screenParams_.borderless_; }
+    bool GetBorderless() const { return screenParams_.IsBorderless(); }
 
     /// Return whether window is resizable.
     /// @property
@@ -661,7 +674,7 @@ public:
 
     /// Return shader cache directory, Direct3D only.
     /// @property
-    const ea::string& GetShaderCacheDir() const { return shaderCacheDir_; }
+    const FileIdentifier& GetShaderCacheDir() const { return shaderCacheDir_; }
 
     /// Return global shader defines.
     const ea::string& GetGlobalShaderDefines() const { return globalShaderDefines_; }
@@ -770,7 +783,7 @@ private:
     /// Called when screen mode is successfully changed by the backend.
     void OnScreenModeChanged();
     /// Adjust the window for new resolution and fullscreen mode.
-    void AdjustWindow(int& newWidth, int& newHeight, bool& newFullscreen, bool& newBorderless, int& monitor);
+    void AdjustWindow(int& newWidth, int& newHeight, WindowMode& newWindowMode, int& monitor);
     /// Create the Direct3D11 device and swap chain. Requires an open window. Can also be called again to recreate swap chain. Return true on success.
     bool CreateDevice(int width, int height);
     /// Update Direct3D11 swap chain state for a new mode and create views for the backbuffer & default depth buffer. Return true on success.
@@ -964,7 +977,7 @@ private:
     /// Format string for universal shaders.
     ea::string universalShaderPath_{ "Shaders/GLSL/{}.glsl" };
     /// Cache directory for Direct3D binary shaders.
-    ea::string shaderCacheDir_;
+    FileIdentifier shaderCacheDir_;
     /// File extension for shaders.
     ea::string shaderExtension_;
     /// Last used shader in shader variation query.

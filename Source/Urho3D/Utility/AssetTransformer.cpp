@@ -34,15 +34,19 @@
 namespace Urho3D
 {
 
-AssetTransformerInput::AssetTransformerInput(const ApplicationFlavor& flavor, const ea::string& resourceName, const ea::string& inputFileName, FileTime inputFileTime)
+AssetTransformerInput::AssetTransformerInput(const ApplicationFlavor& flavor, const ea::string& resourceName,
+    const ea::string& inputFileName, FileTime inputFileTime)
     : flavor_(flavor)
+    , originalResourceName_(resourceName)
+    , originalInputFileName_(inputFileName)
     , resourceName_(resourceName)
     , inputFileName_(inputFileName)
     , inputFileTime_(inputFileTime)
 {
 }
 
-AssetTransformerInput::AssetTransformerInput(const AssetTransformerInput& other, const ea::string& tempPath, const ea::string& outputFileName)
+AssetTransformerInput::AssetTransformerInput(
+    const AssetTransformerInput& other, const ea::string& tempPath, const ea::string& outputFileName)
 {
     *this = other;
     tempPath_ = tempPath;
@@ -51,50 +55,53 @@ AssetTransformerInput::AssetTransformerInput(const AssetTransformerInput& other,
 
 void AssetTransformerInput::SerializeInBlock(Archive& archive)
 {
-    SerializeValue(archive, "Flavor", flavor_.components_);
-    SerializeValue(archive, "ResourceName", resourceName_);
+    SerializeValue(archive, "flavor", flavor_.components_);
+    SerializeValue(archive, "originalResourceName", originalResourceName_);
+    SerializeValue(archive, "originalInputFileName", originalInputFileName_);
 
-    SerializeValue(archive, "InputFileName", inputFileName_);
-    SerializeValue(archive, "InputFileTime", inputFileTime_);
+    SerializeValue(archive, "resourceName", resourceName_);
+    SerializeValue(archive, "inputFileName", inputFileName_);
+    SerializeValue(archive, "inputFileTime", inputFileTime_);
 
-    SerializeValue(archive, "TempPath", tempPath_);
-    SerializeValue(archive, "OutputFileName", outputFileName_);
+    SerializeValue(archive, "tempPath", tempPath_);
+    SerializeValue(archive, "outputFileName", outputFileName_);
 }
 
 AssetTransformerInput AssetTransformerInput::FromBase64(const ea::string& base64)
 {
     Base64InputArchive archive(nullptr, base64);
     AssetTransformerInput result;
-    SerializeValue(archive, "Input", result);
+    SerializeValue(archive, "input", result);
     return result;
 }
 
 ea::string AssetTransformerInput::ToBase64() const
 {
     Base64OutputArchive archive(nullptr);
-    SerializeValue(archive, "Input", const_cast<AssetTransformerInput&>(*this));
+    SerializeValue(archive, "input", const_cast<AssetTransformerInput&>(*this));
     return archive.GetBase64();
 }
 
 void AssetTransformerOutput::SerializeInBlock(Archive& archive)
 {
-    SerializeValue(archive, "SourceModified", sourceModified_);
-    SerializeValue(archive, "OutputResourceNames", outputResourceNames_);
-    SerializeValue(archive, "AppliedTransformers", appliedTransformers_);
+    SerializeValue(archive, "sourceModified", sourceModified_);
+    SerializeValue(archive, "outputResourceNames", outputResourceNames_);
+    SerializeValue(archive, "appliedTransformers", appliedTransformers_);
+    SerializeValue(archive, "dependencyModificationTimes", dependencyModificationTimes_);
 }
 
 AssetTransformerOutput AssetTransformerOutput::FromBase64(const ea::string& base64)
 {
     Base64InputArchive archive(nullptr, base64);
     AssetTransformerOutput result;
-    SerializeValue(archive, "Output", result);
+    SerializeValue(archive, "output", result);
     return result;
 }
 
 ea::string AssetTransformerOutput::ToBase64() const
 {
     Base64OutputArchive archive(nullptr);
-    SerializeValue(archive, "Output", const_cast<AssetTransformerOutput&>(*this));
+    SerializeValue(archive, "output", const_cast<AssetTransformerOutput&>(*this));
     return archive.GetBase64();
 }
 
@@ -132,8 +139,8 @@ bool AssetTransformer::ExecuteTransformers(const AssetTransformerInput& input, A
     return true;
 }
 
-bool AssetTransformer::ExecuteTransformersAndStore(const AssetTransformerInput& input, const ea::string& outputPath, AssetTransformerOutput& output,
-    const AssetTransformerVector& transformers)
+bool AssetTransformer::ExecuteTransformersAndStore(const AssetTransformerInput& input, const ea::string& outputPath,
+    AssetTransformerOutput& output, const AssetTransformerVector& transformers)
 {
     URHO3D_ASSERT(!transformers.empty());
     Context* context = transformers[0]->GetContext();
@@ -152,4 +159,23 @@ bool AssetTransformer::ExecuteTransformersAndStore(const AssetTransformerInput& 
     return true;
 }
 
+void AssetTransformer::AddDependency(
+    const AssetTransformerInput& input, AssetTransformerOutput& output, const ea::string& fileName) const
+{
+    auto fs = GetSubsystem<FileSystem>();
+
+    const ea::string dataFolder = input.originalInputFileName_.substr(
+        0, input.originalInputFileName_.length() - input.originalResourceName_.length());
+
+    if (!fileName.starts_with(dataFolder))
+    {
+        URHO3D_LOGERROR("Dependency file '{}' is not in the same folder as the input file '{}'", fileName,
+            input.originalInputFileName_);
+        return;
+    }
+
+    const ea::string relativeFileName = fileName.substr(dataFolder.length());
+    output.dependencyModificationTimes_[relativeFileName] = fs->GetLastModifiedTime(fileName, true);
 }
+
+} // namespace Urho3D
