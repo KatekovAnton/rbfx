@@ -122,6 +122,7 @@ private:
     void UpdateSubscriptions(bool needGeometryUpdate = true);
     void HandlePreRenderEvent(StringHash eventName, VariantMap& eventData);
     void HandleSceneUpdate(StringHash eventName, VariantMap& eventData);
+    bool IsValidDrawable(Drawable* drawable);
 
     /// Material.
     SharedPtr<Material> material_;
@@ -161,6 +162,8 @@ private:
     ea::vector<SharedPtr<DecalSet>> activeDecalSets_;
     /// Active subscriptions bitmask.
     SubscriptionFlags subscriptionFlags_{SubscriptionMask::None};
+    /// Saved projection transform.
+    Matrix3x4 projectionTransform_;
 };
 
 } // namespace Urho3D
