@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017-2020 the rbfx project.
+// Copyright (c) 2008-2022 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,11 +22,23 @@
 
 #pragma once
 
+#include "Urho3D/Core/Object.h"
+
 namespace Urho3D
 {
 
-class Context;
+/// IKSolver at the sender Node is about to start solving.
+URHO3D_EVENT(E_IKPRESOLVE, IKPreSolve)
+{
+    URHO3D_PARAM(P_NODE, Node);         // Node pointer
+    URHO3D_PARAM(P_IKSOLVER, IKSolver); // IKSolver pointer
+}
 
-void RegisterStandardSerializableHooks(Context* context);
+/// IKSolver at the sender Node has finished solving.
+URHO3D_EVENT(E_IKPOSTSOLVE, IKPostSolve)
+{
+    URHO3D_PARAM(P_NODE, Node);         // Node pointer
+    URHO3D_PARAM(P_IKSOLVER, IKSolver); // IKSolver pointer
+}
 
 }

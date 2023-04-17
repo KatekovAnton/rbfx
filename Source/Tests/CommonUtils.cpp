@@ -42,7 +42,7 @@ namespace Tests
 namespace
 {
 
-void PrintError(StringHash hash, VariantMap& args)
+void PrintError(VariantMap& args)
 {
     if (args[LogMessage::P_LEVEL].GetInt() == LOG_ERROR)
     {
@@ -172,7 +172,7 @@ FrameEventTracker::FrameEventTracker(Context* context, StringHash endFrameEventT
     : Object(context)
 {
     SubscribeToEvent(endFrameEventType,
-        [&](StringHash, VariantMap&)
+        [&]
     {
         if (!recordEvents_)
             recordEvents_ = true;
@@ -235,7 +235,7 @@ AttributeTracker::AttributeTracker(Context* context, StringHash endFrameEventTyp
     : Object(context)
 {
     SubscribeToEvent(endFrameEventType,
-        [&](StringHash, VariantMap&)
+        [&]
     {
         for (const auto& [serializable, attributeName] : trackers_)
         {

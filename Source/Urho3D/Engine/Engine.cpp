@@ -321,7 +321,7 @@ bool Engine::Initialize(const StringVariantMap& parameters)
         graphics->SetOrientations(GetParameter(EP_ORIENTATIONS).GetString());
         graphics->SetShaderValidationEnabled(GetParameter(EP_VALIDATE_SHADERS).GetBool());
 
-        SubscribeToEvent(E_SCREENMODE, [this](StringHash, VariantMap& eventData)
+        SubscribeToEvent(E_SCREENMODE, [this](VariantMap& eventData)
         {
             using namespace ScreenMode;
 
@@ -409,7 +409,7 @@ bool Engine::Initialize(const StringVariantMap& parameters)
 #ifdef URHO3D_SYSTEMUI
         context_->RegisterSubsystem(new SystemUI(context_,
             GetParameter(EP_SYSTEMUI_FLAGS).GetUInt()));
-        RegisterStandardSerializableHooks();
+        RegisterStandardSerializableHooks(context_);
 #endif
 #ifdef URHO3D_RMLUI
         auto* graphics = GetSubsystem<Graphics>();

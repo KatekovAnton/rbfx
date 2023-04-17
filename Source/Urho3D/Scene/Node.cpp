@@ -660,7 +660,7 @@ void Node::SetTransform(const Vector3& position, const Quaternion& rotation, con
     MarkDirty();
 }
 
-void Node::SetTransform(const Matrix3x4& matrix)
+void Node::SetTransformMatrix(const Matrix3x4& matrix)
 {
     SetTransform(matrix.Translation(), matrix.Rotation(), matrix.Scale());
 }
@@ -1439,16 +1439,6 @@ Node* Node::GetChild(unsigned index) const
     return index < children_.size() ? children_[index] : nullptr;
 }
 
-Node* Node::GetChild(const ea::string& name, bool recursive) const
-{
-    return GetChild(StringHash(name), recursive);
-}
-
-Node* Node::GetChild(const char* name, bool recursive) const
-{
-    return GetChild(StringHash(name), recursive);
-}
-
 Node* Node::GetChild(StringHash nameHash, bool recursive) const
 {
     for (auto i = children_.begin(); i != children_.end(); ++i)
@@ -1933,7 +1923,7 @@ void Node::SetTransformSilent(const Vector3& position, const Quaternion& rotatio
     scale_ = scale;
 }
 
-void Node::SetTransformSilent(const Matrix3x4& matrix)
+void Node::SetTransformMatrixSilent(const Matrix3x4& matrix)
 {
     SetTransformSilent(matrix.Translation(), matrix.Rotation(), matrix.Scale());
 }
@@ -2023,7 +2013,7 @@ Component* Node::SafeCreateComponent(const ea::string& typeName, StringHash type
 
 void Node::UpdateWorldTransform() const
 {
-    Matrix3x4 transform = GetTransform();
+    Matrix3x4 transform = GetTransformMatrix();
 
     // Assume the root node (scene) has identity transform
     if (IsTransformHierarchyRoot())
