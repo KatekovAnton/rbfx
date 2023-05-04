@@ -174,7 +174,13 @@ void SamplesManager::Setup()
     engineParameters_[EP_HEADLESS]     = false;
     engineParameters_[EP_SOUND]        = true;
     engineParameters_[EP_HIGH_DPI]     = true;
-    engineParameters_[EP_RESOURCE_PATHS] = "CoreData;Data";
+    
+    if (GetPlatform() == PlatformId::MacOS ||
+        GetPlatform() == PlatformId::iOS) 
+        engineParameters_[EP_RESOURCE_PATHS] = "Resources/Data;Resources/CoreData";
+    else
+        engineParameters_[EP_RESOURCE_PATHS] = "CoreData;Data";
+    
 #if MOBILE
     engineParameters_[EP_ORIENTATIONS] = "Portrait";
 #endif
