@@ -66,7 +66,6 @@ void DecalProjection::RegisterObject(Context* context)
     URHO3D_ENUM_ATTRIBUTE("Autoremove Mode", autoRemove_, autoRemoveModeNames, REMOVE_DISABLED, AM_DEFAULT);
     URHO3D_ATTRIBUTE("Elapsed Time", float, elapsedTime_, 0.0f, AM_DEFAULT);
     URHO3D_ACCESSOR_ATTRIBUTE("View Mask", GetViewMask, SetViewMask, unsigned, DEFAULT_VIEWMASK, AM_DEFAULT);
-    URHO3D_COPY_BASE_ATTRIBUTES(Component);
     URHO3D_ACTION_STATIC_LABEL("Update", UpdateGeometry, "");
     URHO3D_ACTION_STATIC_LABEL("Inline", Inline, "");
 }
