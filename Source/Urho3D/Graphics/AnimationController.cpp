@@ -858,6 +858,11 @@ bool AnimationController::Stop(const ea::string& name, float fadeTime)
     return true;
 }
 
+void AnimationController::SetAutoupdate(bool autoupdate)
+{
+    autoupdate_ = autoupdate;
+}
+
 bool AnimationController::SetTime(const ea::string& name, float time)
 {
     Animation* animation = GetAnimationByName(name);
@@ -960,7 +965,9 @@ void AnimationController::HandleScenePostUpdate(StringHash eventType, VariantMap
 {
     using namespace ScenePostUpdate;
 
-    Update(eventData[P_TIMESTEP].GetFloat());
+    if (autoupdate_) {
+        Update(eventData[P_TIMESTEP].GetFloat());
+    }
 }
 
 void AnimationController::MarkAnimationStateTracksDirty()

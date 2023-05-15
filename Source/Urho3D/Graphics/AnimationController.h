@@ -114,6 +114,8 @@ struct URHO3D_API AnimationParameters
 class URHO3D_API AnimationController : public AnimationStateSource
 {
     URHO3D_OBJECT(AnimationController, AnimationStateSource);
+    
+    bool autoupdate_ = true;
 
 public:
     /// Construct.
@@ -148,6 +150,7 @@ public:
     unsigned GetAnimationLayer(unsigned index) const { return animations_[index].params_.layer_; }
     const AnimationParameters& GetAnimationParameters(unsigned index) const { return animations_[index].params_; }
     unsigned GetRevision() const { return revision_; }
+    bool GetAutoupdate() const { return autoupdate_; }
     void UpdatePose();
     /// @}
 
@@ -178,6 +181,7 @@ public:
     bool Fade(const ea::string& name, float targetWeight, float fadeTime = 0.0f);
     bool Stop(const ea::string& name, float fadeTime = 0.0f);
 
+    void SetAutoupdate(bool autoupdate);
     bool SetTime(const ea::string& name, float time);
     bool SetWeight(const ea::string& name, float weight);
     bool SetSpeed(const ea::string& name, float speed);
