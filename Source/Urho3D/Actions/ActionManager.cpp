@@ -25,13 +25,11 @@
 
 #include "../Core/CoreEvents.h"
 #include "../IO/Log.h"
+#include "Actions.h"
 #include "ActionSet.h"
 #include "ActionState.h"
 #include "Attribute.h"
-#include "Ease.h"
 #include "FiniteTimeActionState.h"
-#include "Misc.h"
-#include "Move.h"
 #include "Parallel.h"
 #include "Repeat.h"
 #include "Sequence.h"
@@ -57,13 +55,13 @@ struct EmptyState : public FiniteTimeActionState
     void Step(float dt) override {}
 };
 
-class EmptyAction : public FiniteTimeAction
+class EmptyAction : public DynamicAction
 {
-    URHO3D_OBJECT(EmptyAction, FiniteTimeAction)
+    URHO3D_OBJECT(EmptyAction, DynamicAction)
 
 public:
     EmptyAction(Context* context)
-        : FiniteTimeAction(context)
+        : BaseClassName(context)
     {
         state_ = MakeShared<EmptyState>(this, nullptr);
     }
@@ -143,7 +141,7 @@ void RegisterActionLibrary(Context* context, ActionManager* manager)
     manager->AddFactoryReflection<EaseExponentialIn>();
     manager->AddFactoryReflection<EaseExponentialInOut>();
     manager->AddFactoryReflection<EaseExponentialOut>();
-    manager->AddFactoryReflection<Sequence>();
+    Sequence::RegisterObject(manager);
     manager->AddFactoryReflection<Parallel>();
     manager->AddFactoryReflection<Repeat>();
     manager->AddFactoryReflection<RepeatForever>();

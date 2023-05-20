@@ -32,12 +32,13 @@ namespace Actions
 {
 
 /// Sequence of actions
-class URHO3D_API Sequence : public FiniteTimeAction
+class URHO3D_API Sequence : public DynamicAction
 {
-    URHO3D_OBJECT(Sequence, FiniteTimeAction)
+    URHO3D_OBJECT(Sequence, DynamicAction)
 public:
     /// Construct.
     explicit Sequence(Context* context);
+    static void RegisterObject(ActionManager* context);
 
     /// Set first action in sequence.
     void SetFirstAction(FiniteTimeAction* action);
@@ -56,6 +57,11 @@ public:
 
     /// Serialize content from/to archive. May throw ArchiveException.
     void SerializeInBlock(Archive& archive) override;
+
+    /// Create GraphNode from the action. Required for action editor.
+    GraphNode* ToGraphNode(Graph* graph) const override;
+    /// Initialize action from GraphNode. Required for action editor.
+    void FromGraphNode(GraphNode* node) override;
 
 protected:
     /// Create new action state from the action.
